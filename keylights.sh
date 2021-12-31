@@ -75,10 +75,11 @@ parse_params() {
     while :; do
         case "${1-}" in
         -h | --help) usage ;;
-        -p | --pretty) pretty=1;;
+        -p | --pretty) pretty=1 ;;
         -v | --verbose) set -x ;;
         -s | --silent) silent=1 ;;
-        -t | --target) target=1 
+        -t | --target)
+            target=1
             target="${2-""}"
             shift
             ;;
@@ -95,9 +96,9 @@ parse_params() {
     [[ ${#args[@]} -ne 1 ]] && die "Incorrect action count, 1 allowed"
 
     [[ ($silent -eq 1) && ($pretty -eq 1) ]] && die "Cannot use silent and pretty options simultaneously"
-    
+
     [[ -n "${actions[${args[0]}]}" ]] && action="${args[0]}"
-    
+
     return 0
 }
 
@@ -107,7 +108,21 @@ dependencies() {
             die "Dependency $var was not found, please install and try again"
         fi
     done
+}
 
+default_light_properties() {
+    # Default values for json type enforcement
+    declare device="N/A"
+    declare hostname="N/A"
+    declare manufacturer="N/A"
+    declare ip="N/A"
+    declare -i port=0
+    declare mac="N/A"
+    declare sku="N/A"
+    declare cfg="{}"
+    declare url="{}"
+    declare info="{}"
+    declare light="{}"
 }
 
 produce_json() {
@@ -121,11 +136,11 @@ produce_json() {
 
 print_json() {
     if [[ $pretty -eq 1 ]]; then
-        echo "$1"|jq '.' 
+        echo "$1" | jq '.'
     else
-        echo "$1"|jq -c -M '.'
+        echo "$1" | jq -c -M '.'
     fi
-    
+
     exit 0
 }
 
@@ -138,28 +153,23 @@ set_state() {
     die "To be implemented"
 }
 
-
 find_lights() {
     # Scan the network for Elgato devices
     avahi-browse -d local _elg._tcp --resolve -t | grep -v "^\+" >"$temp_file"
 
-    # Declaration for json type forcing
-    declare device="N/A"
-    declare hostname="N/A"
-    declare manufacturer="N/A"
-    declare ip="N/A"
-    declare -i port=0
-    declare mac="N/A"
-    declare sku="N/A"
+    default_light_properties
 
     while read -r line; do
 
         # Gather information about the light
         if [[ ($line == =*) && ($line =~ IPv4[[:space:]](.+)[[:space:]]_elg) ]]; then
             device=$(eval echo "${BASH_REMATCH[1]}") # eval to strip whitespace
-        elif [[ $line =~ hostname.+\[(.+)\] ]]; then hostname=${BASH_REMATCH[1]};
-        elif [[ $line =~ address.+\[(.+)\] ]]; then ip=${BASH_REMATCH[1]};
-        elif [[ $line =~ port.+\[(.+)\] ]]; then port=${BASH_REMATCH[1]};
+        elif [[ $line =~ hostname.+\[(.+)\] ]]; then
+            hostname=${BASH_REMATCH[1]}
+        elif [[ $line =~ address.+\[(.+)\] ]]; then
+            ip=${BASH_REMATCH[1]}
+        elif [[ $line =~ port.+\[(.+)\] ]]; then
+            port=${BASH_REMATCH[1]}
         elif [[ $line =~ txt.+\[(.+)\] ]]; then
             txt=$(eval echo "${BASH_REMATCH[1]}") # eval to strip single and double quotes
 
@@ -167,37 +177,33 @@ find_lights() {
             if [[ $txt =~ id=([^[[:space:]]*]*) ]]; then mac=${BASH_REMATCH[1]}; fi
             if [[ $txt =~ md=.+[[:space:]]([^[[:space:]]*]*)[[:space:]]id= ]]; then sku=${BASH_REMATCH[1]}; fi
 
-            
             # Get information from the light
-            declare cfg="{}"
-            declare url="{}"
-            declare info="{}"
-            declare light="{}"
             if [[ ! (-z $ip) && ! (-z $port) ]]; then
                 url="http://$ip:$port"
-                cfg=$(eval "${call} GET ${url}${settings}") > /dev/null
-                info=$(eval "${call} GET ${url}${accessory_info}") > /dev/null
-                light=$(eval "${call} GET ${url}${devices}") > /dev/null
+                cfg=$(eval "${call} GET ${url}${settings}") >/dev/null
+                info=$(eval "${call} GET ${url}${accessory_info}") >/dev/null
+                light=$(eval "${call} GET ${url}${devices}") >/dev/null
             fi
+
             # Store the light as json
-            lights["$ip"]=$( jq -n \
-                    --arg dev "$device" \
-                    --arg hn "$hostname" \
-                    --arg ip "$ip" \
-                    --arg port "$port" \
-                    --arg mf "$manufacturer" \
-                    --arg mac "$mac" \
-                    --arg sku "$sku" \
-                    --arg url "$url" \
-                    --argjson light "$light" \
-                    --argjson cfg "$cfg" \
-                    --argjson info "$info" \
-                    '{device: $dev, manufacturer: $mf, hostname: $hn, url: $url, ip: $ip, 
-                    port: $port, mac: $mac, sku: $sku, light: $light, settings: $cfg, info: $info}' )
-            
-            # Reset for next light
-            declare {device,hostname,manufacturer,url,ip,mac,protocol,sku,cfg}="N/A"
-            declare port=0
+            lights["$ip"]=$(jq -n \
+                --arg dev "$device" \
+                --arg hn "$hostname" \
+                --arg ip "$ip" \
+                --arg port "$port" \
+                --arg mf "$manufacturer" \
+                --arg mac "$mac" \
+                --arg sku "$sku" \
+                --arg url "$url" \
+                --argjson light "$light" \
+                --argjson cfg "$cfg" \
+                --argjson info "$info" \
+                '{device: $dev, manufacturer: $mf, hostname: $hn, url: $url, ip: $ip, 
+                    port: $port, mac: $mac, sku: $sku, light: $light, settings: $cfg, info: $info}')
+
+            # Reset for next light as we are processing the last avahi line
+            default_light_properties
+
         fi
     done <"$temp_file"
 }
@@ -221,10 +227,3 @@ produce_json
 [[ $action == "status" ]] && status
 [[ $action == "on" ]] && set_state 1
 [[ $action == "off" ]] && set_state 0
-
-
-
-
-
-
-
