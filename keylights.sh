@@ -25,21 +25,14 @@ declare settings="/elgato/lights/settings"
 if [ ! -r "${icon}" ]; then icon=sunny; fi
 
 notify() {
-    echo "mm"
     if [ $silent -eq 0 ]; then
         notify-send -i "$icon" "Key Light Controller" "$1"
     fi
 }
 
-error() {
-    echo >&2 -e "${1-}"
-}
-
 die() {
-    local msg=$1
-    local code=${2-1} # default exit status 1
-    error "$msg"
-    exit "$code"
+    echo >&2 -e "${1-}"
+    exit "${2-1}"
 }
 
 destroy() {
@@ -111,7 +104,7 @@ parse_params() {
 dependencies() {
     for var in "$@"; do
         if ! command -v $var &>/dev/null; then
-            error "Dependency $var was not found, please install and try again"
+            die "Dependency $var was not found, please install and try again"
         fi
     done
 
@@ -218,7 +211,7 @@ dependencies avahi-browse curl notify-send jq
 find_lights
 
 # Fail if we cannot find lights
-[[ ${#lights[@]} -eq 0 ]] && error "No lights found" 1
+[[ ${#lights[@]} -eq 0 ]] && die "No lights found" 2
 
 produce_json
 
