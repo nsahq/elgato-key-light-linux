@@ -99,8 +99,9 @@ parse_params() {
 
     # check required params and arguments
     declare -A actions=([help]=1 [list]=1)
-    #[[ -z "${param-}" ]] && die "Missing required parameter: param"
     [[ ${#args[@]} -ne 1 ]] && die "Incorrect action count, 1 allowed"
+
+    [[ ($silent -eq 1) && ($pretty -eq 1) ]] && die "Cannot use silent and pretty options simultaneously"
     
     [[ -n "${actions[${args[0]}]}" ]] && action="${args[0]}"
     
@@ -182,11 +183,8 @@ find_lights() {
             declare light="{}"
             if [[ ! (-z $ip) && ! (-z $port) ]]; then
                 url="http://$ip:$port"
-                #echo "${call} GET ${url}${settings}"
                 cfg=$(eval "${call} GET ${url}${settings}") > /dev/null
-                #echo "${call} GET ${url}${accessory_info}"
                 info=$(eval "${call} GET ${url}${accessory_info}") > /dev/null
-                #echo "${call} GET ${url}${devices}"
                 light=$(eval "${call} GET ${url}${devices}") > /dev/null
             fi
             # Store the light as json
@@ -233,10 +231,6 @@ produce_json
 [[ $action == "status" ]] && status
 [[ $action == "on" ]] && set_state 1
 [[ $action == "off" ]] && set_state 0
-
-
-
-# Manage printing (parameter -l/--list specicified)
 
 
 
