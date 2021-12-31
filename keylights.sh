@@ -11,7 +11,8 @@ script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
 icon="${script_dir}/assets/elgato.png"
 
 # Declarations
-declare -i {silent,list,pretty}=0
+declare -i silent=0
+declare -i pretty=0
 declare action="usage"
 declare -A lights
 declare lights_json
@@ -143,8 +144,15 @@ find_lights() {
     # Scan the network for Elgato devices
     avahi-browse -d local _elg._tcp --resolve -t | grep -v "^\+" >"$temp_file"
 
-    # Extract data
-    declare {device,hostname,manufacturer,ip,port,mac,protocol,sku}="N/A"
+    # Declaration for json type forcing
+    declare device="N/A"
+    declare hostname="N/A"
+    declare manufacturer="N/A"
+    declare ip="N/A"
+    declare -i port=0
+    declare mac="N/A"
+    declare sku="N/A"
+
     cat "$temp_file" > tmp
     while read -r line; do
 
@@ -189,7 +197,9 @@ find_lights() {
                     '{device: $dev, manufacturer: $mf, hostname: $hn, url: $url, ip: $ip, 
                     port: $port, mac: $mac, sku: $sku, light: $light, settings: $cfg, info: $info}' )
             
-            declare {device,hostname,manufacturer,url,ip,port,mac,protocol,sku,cfg}="N/A"
+            # Reset for next light
+            declare {device,hostname,manufacturer,url,ip,mac,protocol,sku,cfg}="N/A"
+            declare port=0
         fi
     done <"$temp_file"
     
