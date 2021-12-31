@@ -14,6 +14,7 @@ icon="${script_dir}/assets/elgato.png"
 declare -i silent=0
 declare -i pretty=0
 declare action="usage"
+declare target=""
 declare -A lights
 declare lights_json
 declare call="curl --silent --show-error --location --header 'Accept: application/json' --request"
@@ -84,6 +85,10 @@ parse_params() {
         -p | --pretty) pretty=1;;
         -v | --verbose) set -x ;;
         -s | --silent) silent=1 ;;
+        -t | --target) target=1 
+            target="${2-""}"
+            shift
+            ;;
         -?*) die "Unknown option: $1" ;;
         *) break ;;
         esac
@@ -171,7 +176,10 @@ find_lights() {
 
             
             # Get information from the light
-            declare {cfg,url,info,light}="{}"
+            declare cfg="{}"
+            declare url="{}"
+            declare info="{}"
+            declare light="{}"
             if [[ ! (-z $ip) && ! (-z $port) ]]; then
                 url="http://$ip:$port"
                 #echo "${call} GET ${url}${settings}"
