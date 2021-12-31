@@ -207,8 +207,6 @@ find_lights() {
             declare port=0
         fi
     done <"$temp_file"
-    
-    rm "$temp_file" 2>/dev/null
 }
 
 # Manage user parameters
