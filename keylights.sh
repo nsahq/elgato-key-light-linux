@@ -159,7 +159,6 @@ find_lights() {
     declare mac="N/A"
     declare sku="N/A"
 
-    cat "$temp_file" > tmp
     while read -r line; do
 
         # Gather information about the light
