@@ -1,5 +1,4 @@
 #!/bin/bash
-#set -x
 set -Eeuo pipefail
 
 trap destroy SIGINT SIGTERM ERR EXIT
@@ -14,8 +13,10 @@ declare -i silent=0
 declare -i pretty=0
 declare action="usage"
 declare target=""
+declare format="json"
 declare -A lights
 declare lights_json
+declare flat_json
 declare call='curl --silent --show-error --location --header "Accept: application/json" --request'
 declare devices="/elgato/lights"
 declare accessory_info="/elgato/accessory-info"
@@ -43,7 +44,7 @@ destroy() {
 
 usage() {
     cat <<EOF
-Usage: $(basename "${BASH_SOURCE[0]}") [-h] [-l] [-p] [-s] [-v] <action>
+Usage: $(basename "${BASH_SOURCE[0]}") [-h] [-f <value>] [-l] [-p] [-s] [-t <value>][-v] [--<option>] [--<option> <value>] <action>
 
 Elgato Lights controller. Works for Key Light and Key Light Air.
 
@@ -57,13 +58,23 @@ Available actions:
     increase    Increases brightness by 10
     decrease    Decreases brightness by 10
 
+Available formats:
+    json        Renders output as JSON (default)
+    flat        Renders output as flattened JSON with .(dot) notation JSON (default)
+    html        Renders output as basic html table
+    csv         Renders output as csv
+    table       Renders output as a printed table
+    pair        Renders output as flattened key=value pairs
+
+
 Available options:
 
 -h, --help      Print this help and exit
+-f  --format    Set output format
 -p, --pretty    Pretty print console output
--v, --verbose   Print script debug info
 -s, --silent    Supress notifications
 -t, --target    Only perform action on devices where value matches filter
+-v, --verbose   Print script debug info
 EOF
     exit
 }
@@ -74,6 +85,10 @@ parse_params() {
     while :; do
         case "${1-}" in
         -h | --help) usage ;;
+        -f | --format)
+            format="${2-}"
+            shift
+            ;;
         -p | --pretty) pretty=1 ;;
         -v | --verbose) set -x ;;
         -s | --silent) silent=1 ;;
@@ -93,7 +108,7 @@ parse_params() {
     declare -A actions=([help]=1 [list]=1 [status]=1 [on]=1 [off]=1)
     [[ ${#args[@]} -ne 1 ]] && die "Incorrect argument count"
 
-    [[ ($silent -eq 1) && ($pretty -eq 1) ]] && die "Cannot use silent and pretty options simultaneously"
+    #[[ ($silent -eq 1) && ($pretty -eq 1) ]] && die "Cannot use silent and pretty options simultaneously"
 
     [[ -n "${actions[${args[0]}]}" ]] && action="${args[0]}"
 
@@ -136,18 +151,48 @@ produce_json() {
     lights_json=$(echo "[${json%,}]" | jq -c "$t")
 }
 
+output() {
+    data=${1-}
+    type=${2-"$format"}
+
+    # Mange user requested output format
+    case $format in
+    json | flat) print_json "$data" ;;
+    table) print_json "$data" ;;
+    csv) print_csv "$data" ;;
+    pair) print_pair "$data" ;;
+    html) print_html "$data" ;;
+    -?*) die "Unknown output format (-f/--format): $type" ;;
+    esac
+}
+
 print_json() {
     # TODO: Evaluate adding jq filtering as filter argument
-    if [[ $pretty -eq 1 ]]; then
-        echo "$1" | jq '.'
+    query=""
+
+    # Deconstruct json and assemble in flattened with .(dot) notation
+    if [[ $format == "flat" ]]; then
+        query='. as $in | reduce leaf_paths as $path ({}; . + { ($path | map(tostring) | join(".")): $in | getpath($path) })'
     else
-        echo "$1" | jq -c -M '.'
+        query="'.'"
+    fi
+
+    # Manage pretty printing
+    if [[ $pretty -eq 1 ]]; then
+        echo "${1-}" | jq "$query"
+    else
+        echo "${1-}" | jq -c -M "$query"
     fi
 
     exit 0
 }
 
-print_status() {
+print_table() {
+    bold=$(tput bold)
+    normal=$(tput sgr0)
+    message='
+    
+'
     die "To be implemented"
 }
 
@@ -252,19 +297,10 @@ produce_json
 
 # Dispatch actions
 case $action in
-usage)
-    usage
-    ;;
-list)
-    print_json "${lights_json}"
-    ;;
-status)
-    status
-    ;;
-on)
-    set_state 1
-    ;;
-off)
-    set_state 0
-    ;;
+usage) usage ;;
+list) output "${lights_json}" ;;
+status) status ;;
+on) set_state 1 ;;
+off) set_state 0 ;;
+-?*) die "Unknown action" ;;
 esac
