@@ -1,0 +1,20 @@
+= enp42s0 IPv6 Elgato Key Light Air 5E29                     _elg._tcp            local
+   hostname = [elgato-key-light-air-5e29.local]
+   address = [192.168.0.75]
+   port = [9123]
+   txt = ["pv=1.0" "md=Elgato Key Light Air 20LAB9901" "id=3C:6A:9D:19:E0:F5" "dt=200" "mf=Elgato"]
+= enp42s0 IPv6 Elgato Key Light Air 0C2C                     _elg._tcp            local
+   hostname = [elgato-key-light-air-0c2c.local]
+   address = [192.168.0.132]
+   port = [9123]
+   txt = ["pv=1.0" "md=Elgato Key Light Air 20LAB9901" "id=3C:6A:9D:19:7B:75" "dt=200" "mf=Elgato"]
+= enp42s0 IPv4 Elgato Key Light Air 5E29                     _elg._tcp            local
+   hostname = [elgato-key-light-air-5e29.local]
+   address = [192.168.0.75]
+   port = [9123]
+   txt = ["pv=1.0" "md=Elgato Key Light Air 20LAB9901" "id=3C:6A:9D:19:E0:F5" "dt=200" "mf=Elgato"]
+= enp42s0 IPv4 Elgato Key Light Air 0C2C                     _elg._tcp            local
+   hostname = [elgato-key-light-air-0c2c.local]
+   address = [192.168.0.132]
+   port = [9123]
+   txt = ["pv=1.0" "md=Elgato Key Light Air 20LAB9901" "id=3C:6A:9D:19:7B:75" "dt=200" "mf=Elgato"]

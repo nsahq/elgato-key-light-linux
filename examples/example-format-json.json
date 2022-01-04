@@ -1,0 +1,42 @@
+[
+    {
+        "device": "Elgato Key Light Air 0C2C",
+        "manufacturer": "Elgato",
+        "hostname": "elgato-key-light-air-0c2c.local",
+        "url": "http://192.168.0.132:9123",
+        "ipv4": "192.168.0.132",
+        "ipv6": "N/A",
+        "port": 9123,
+        "mac": "3C:6A:9D:19:7B:75",
+        "sku": "20LAB9901",
+        "light": {
+            "numberOfLights": 1,
+            "lights": [
+                {
+                    "on": 0,
+                    "brightness": 31,
+                    "temperature": 179
+                }
+            ]
+        },
+        "settings": {
+            "powerOnBehavior": 1,
+            "powerOnBrightness": 20,
+            "powerOnTemperature": 213,
+            "switchOnDurationMs": 100,
+            "switchOffDurationMs": 300,
+            "colorChangeDurationMs": 100
+        },
+        "info": {
+            "productName": "Elgato Key Light Air",
+            "hardwareBoardType": 200,
+            "firmwareBuildNumber": 199,
+            "firmwareVersion": "1.0.3",
+            "serialNumber": "CW16K1A01748",
+            "displayName": "Front  Right",
+            "features": [
+                "lights"
+            ]
+        }
+    }
+]
