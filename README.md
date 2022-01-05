@@ -32,12 +32,12 @@ The parameter data to pass in to the -t or --target option uses.(dot) notation o
 The dot(.) notation to target a specific host based on its ipv4 address would be:
 
 ```bash
-    '.ipv4 = "192.168.0.132"'
+    '.ipv4 == "192.168.0.132"'
 ```
 
 of for a nested JSON object like the serial number within the info object:
 ```bash
-    '.serialNumber = "CW16K1A01748"'
+    '.serialNumber == "CW16K1A01748"'
 ```
 
 Example of JSON result (see examples directory for more/full output examples):
