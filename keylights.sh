@@ -157,9 +157,9 @@ output() {
     json) print_json "$lights_json" ;;
     simple) print_json "$simple_json" ;;
     flat) print_json "$flat_json" ;;
-    table) print_json "$simple_json" ;;
-    csv) print_csv "$simple_json" ;;
-    pair) print_pair "$simple_json" ;;
+    table) print_structured "$simple_json" '@tsv' ;;
+    csv) print_structured "$simple_json" '@csv' ;;
+    pair) print_pairs "$simple_json" ;;
     html) print_html "$simple_json" ;;
     -?*) die "Unknown output format (-f/--format): $format" ;;
     esac
@@ -167,33 +167,30 @@ output() {
 
 print_json() {
     # TODO: Evaluate adding jq filtering as filter argument
-    query=""
-
-    # Deconstruct json and assemble in flattened with .(dot) notation
-    if [[ $format == "flat" ]]; then
-        #query='reduce ( tostream | select(length==2) | .[0] |= [join(".")] ) as [$p,$v] ({}; setpath($p; $v))'
-        query='.'
-    else
-        query='.'
-    fi
 
     # Manage pretty printing
     if [[ $pretty -eq 1 ]]; then
-        echo "${1-}" | jq "$query"
+        echo "${1-}" | jq '.'
     else
-        echo "${1-}" | jq -c -M "$query"
+        echo "${1-}" | jq -c -M '.'
     fi
 
     exit 0
 }
 
-print_table() {
+print_structured() {
     bold=$(tput bold)
     normal=$(tput sgr0)
-    message='
-    
-'
-    die "To be implemented"
+
+    query="(.[0] | keys_unsorted | map(ascii_upcase)), (.[] | [.[]])|${2-@csv}"
+
+    # Manage pretty printing
+    if [[ $pretty -eq 1 ]]; then
+        echo "${1-}" | jq --raw-output "$query" | column -t -s$'\t'
+    else
+        echo "${1-}" | jq -r "$query"
+    fi
+
 }
 
 set_state() {
