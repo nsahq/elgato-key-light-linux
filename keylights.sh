@@ -179,9 +179,6 @@ print_json() {
 }
 
 print_structured() {
-    bold=$(tput bold)
-    normal=$(tput sgr0)
-
     query="(.[0] | keys_unsorted | map(ascii_upcase)), (.[] | [.[]])|${2-@csv}"
 
     # Manage pretty printing
@@ -190,7 +187,17 @@ print_structured() {
     else
         echo "${1-}" | jq -r "$query"
     fi
+}
 
+print_pairs() {
+    query='.[] | "--------------",(to_entries[] | [.key, "=", .value] | @tsv)'
+
+    # Manage pretty printing
+    if [[ $pretty -eq 1 ]]; then
+        echo "${1-}" | jq --raw-output "$query" | column -t -s$'\t'
+    else
+        echo "${1-}" | jq "$query"
+    fi
 }
 
 set_state() {
