@@ -141,16 +141,21 @@ default_light_properties() {
 }
 
 produce_json() {
-    declare json
-    t=$(eval echo "'.[] | select($target)'")
+    t=$(eval echo "'[.[] | select($target)]'")
 
-    for l in "${!lights[@]}"; do
-        json+="${lights[$l]},"
-    done
-
-    lights_json=$(echo "[${json%,}]" | jq -c "$t")
+    lights_json=$(echo "${lights[@]}" | jq -c -s "$t")
 }
 
+# produce_json() {
+#     declare json
+#     t=$(eval echo "'.[] | select($target)'")
+
+#     for l in "${!lights[@]}"; do
+#         json+="${lights[$l]},"
+#     done
+
+#     lights_json=$(echo "[${json%,}]" | jq -c "$t")
+# }
 output() {
     data=${1-}
     type=${2-"$format"}
@@ -172,9 +177,12 @@ print_json() {
 
     # Deconstruct json and assemble in flattened with .(dot) notation
     if [[ $format == "flat" ]]; then
-        query='. as $in | reduce leaf_paths as $path ({}; . + { ($path | map(tostring) | join(".")): $in | getpath($path) })'
+        #query='.[]| . as $in | reduce leaf_paths as $path ({}; . + { ($path | map(tostring) | join(".")): $in | getpath($path) })'
+        #query='. as \$data | [ path(.. | select(scalars|tostring), select($empty_tests)) ] | map({ (map(tostring) | join("$join_char")) : (. as \$path | . = \$data | getpath(\$path)) }) | reduce .[] as \$item ({ }; . + \$item);'
+        #query='[leaf_paths as $path | {"key": $path | join("."), "value": getpath($path)}] | from_entries'
+        query='reduce ( tostream | select(length==2) | .[0] |= [join(".")] ) as [$p,$v] ({}; setpath($p; $v))'
     else
-        query="'.'"
+        query='.'
     fi
 
     # Manage pretty printing
