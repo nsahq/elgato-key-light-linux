@@ -88,10 +88,16 @@ The dot(.) notation to target a specific host based on its ipv4 address would be
     '.ipv4 == "192.168.0.132"'
 ```
 
-of for a nested JSON object like the serial number within the info object:
+or for a nested JSON object like the power on behaviour within the settings object:
 
 ```bash
-    '.serialNumber == "CW16K1A01748"'
+    '.settings.powerOnBehavior" == 1'
+```
+
+while .(dot) notation is used to target underlying objects, you can also search in nested arrays by piping them '|' and catching/expanding them with '[]' like this:
+
+```bash
+'.lights | .[].on == 0'
 ```
 
 Example of JSON result (see examples directory for more/full output examples):
@@ -155,4 +161,10 @@ Perform action on all lights that have a duration of 100 ms when switched on (no
 
 ```bash
 ./keylights.sh -t '.settings.switchOnDurationMs == 100)' <action>
+```
+
+Perform action on all lights that are currently switched on (notice the array expansion with | .[])):
+
+```bash
+./keylights.sh -t '.lights | .[].on == 1' <action>
 ```
