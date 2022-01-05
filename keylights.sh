@@ -159,7 +159,7 @@ output() {
     flat) print_json "$flat_json" ;;
     table) print_structured "$simple_json" '@tsv' ;;
     csv) print_structured "$simple_json" '@csv' ;;
-    pair) print_pairs "$simple_json" ;;
+    pair) print_structured "$simple_json" 'pairs' ;;
     html) print_html "$simple_json" ;;
     -?*) die "Unknown output format (-f/--format): $format" ;;
     esac
@@ -181,22 +181,14 @@ print_json() {
 print_structured() {
     query="(.[0] | keys_unsorted | map(ascii_upcase)), (.[] | [.[]])|${2-@csv}"
 
+    if [[ ${2} == 'pairs' ]]; then
+        query='.[] | "--------------",(to_entries[] | [.key, "=", .value] | @tsv)'
+    fi
     # Manage pretty printing
     if [[ $pretty -eq 1 ]]; then
         echo "${1-}" | jq --raw-output "$query" | column -t -s$'\t'
     else
         echo "${1-}" | jq -r "$query"
-    fi
-}
-
-print_pairs() {
-    query='.[] | "--------------",(to_entries[] | [.key, "=", .value] | @tsv)'
-
-    # Manage pretty printing
-    if [[ $pretty -eq 1 ]]; then
-        echo "${1-}" | jq --raw-output "$query" | column -t -s$'\t'
-    else
-        echo "${1-}" | jq "$query"
     fi
 }
 
