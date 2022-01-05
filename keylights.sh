@@ -15,6 +15,7 @@ declare target='.'
 declare format="json"
 declare -A lights
 declare lights_json
+declare simple_json
 declare flat_json
 declare call='curl --silent --show-error --location --header "Accept: application/json" --request'
 declare devices="/elgato/lights"
@@ -58,7 +59,8 @@ Available actions:
 
 Available formats:
     json        Renders output as JSON (default)
-    flat        Renders output as flattened JSON with .(dot) notation JSON (default)
+    simple      Renders output as JSON array of single level objects with subarrays as .(dot) notation JSON
+    flat        Renders output as fully flattened single level JSON with .(dot) notation JSON
     html        Renders output as basic html table
     csv         Renders output as csv
     table       Renders output as a printed table
@@ -142,20 +144,24 @@ produce_json() {
     t=$(eval echo "'[.[] | select($target)]'")
 
     lights_json=$(echo "${lights[@]}" | jq -c -s "$t")
+    simple_json=$(echo "${lights_json}" | jq -c '.[] | reduce ( tostream | select(length==2) | .[0] |= [join(".")] ) as [$p,$v] ({}; setpath($p; $v)) ')
+    simple_json=$(echo "${simple_json}" | jq -c -s '.') # slurp it to make it an array
+    flat_json=$(echo "${lights_json}" | jq -c -s '.[] | reduce ( tostream | select(length==2) | .[0] |= [join(".")] ) as [$p,$v] ({}; setpath($p; $v)) ')
+
 }
 
 output() {
-    data=${1-}
-    type=${2-"$format"}
 
     # Mange user requested output format
     case $format in
-    json | flat) print_json "$data" ;;
-    table) print_json "$data" ;;
-    csv) print_csv "$data" ;;
-    pair) print_pair "$data" ;;
-    html) print_html "$data" ;;
-    -?*) die "Unknown output format (-f/--format): $type" ;;
+    json) print_json "$lights_json" ;;
+    simple) print_json "$simple_json" ;;
+    flat) print_json "$flat_json" ;;
+    table) print_json "$simple_json" ;;
+    csv) print_csv "$simple_json" ;;
+    pair) print_pair "$simple_json" ;;
+    html) print_html "$simple_json" ;;
+    -?*) die "Unknown output format (-f/--format): $format" ;;
     esac
 }
 
@@ -165,7 +171,8 @@ print_json() {
 
     # Deconstruct json and assemble in flattened with .(dot) notation
     if [[ $format == "flat" ]]; then
-        query='reduce ( tostream | select(length==2) | .[0] |= [join(".")] ) as [$p,$v] ({}; setpath($p; $v))'
+        #query='reduce ( tostream | select(length==2) | .[0] |= [join(".")] ) as [$p,$v] ({}; setpath($p; $v))'
+        query='.'
     else
         query='.'
     fi
@@ -258,7 +265,7 @@ find_lights() {
             '{device: $dev, manufacturer: $mf, hostname: $hn, url: $url, ipv4: $ipv4, ipv6: $ipv6, 
                 port: $port, mac: $mac, sku: $sku, settings: $cfg}')
 
-        # Store the light as json
+        # Store the light as json and merge info + light into base object
         lights["$device"]=$(echo "$info $light $json" | jq -s '. | add')
 
         # Reset for next light as we are processing the last avahi line
@@ -283,7 +290,7 @@ produce_json
 # Dispatch actions
 case $action in
 usage) usage ;;
-list) output "${lights_json}" ;;
+list) output ;;
 status) status ;;
 on) set_state 1 ;;
 off) set_state 0 ;;
