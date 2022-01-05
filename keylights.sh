@@ -11,7 +11,7 @@ icon="${script_dir}/assets/elgato.png"
 declare -i silent=0
 declare -i pretty=0
 declare action="usage"
-declare target=""
+declare target='.'
 declare format="json"
 declare -A lights
 declare lights_json
