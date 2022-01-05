@@ -254,13 +254,12 @@ find_lights() {
             --arg mac "$mac" \
             --arg sku "$sku" \
             --arg url "$url" \
-            --argjson light "$light" \
             --argjson cfg "$cfg" \
             '{device: $dev, manufacturer: $mf, hostname: $hn, url: $url, ipv4: $ipv4, ipv6: $ipv6, 
-                port: $port, mac: $mac, sku: $sku, light: $light, settings: $cfg}')
+                port: $port, mac: $mac, sku: $sku, settings: $cfg}')
 
         # Store the light as json
-        lights["$device"]=$(echo "$info $json" | jq -s '. | add')
+        lights["$device"]=$(echo "$info $light $json" | jq -s '. | add')
 
         # Reset for next light as we are processing the last avahi line
         default_light_properties

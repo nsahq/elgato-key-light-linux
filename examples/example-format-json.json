@@ -9,6 +9,14 @@
         "features": [
             "lights"
         ],
+        "numberOfLights": 1,
+        "lights": [
+            {
+                "on": 0,
+                "brightness": 31,
+                "temperature": 179
+            }
+        ],
         "device": "Elgato Key Light Air 0C2C",
         "manufacturer": "Elgato",
         "hostname": "elgato-key-light-air-0c2c.local",
@@ -18,16 +26,6 @@
         "port": 9123,
         "mac": "3C:6A:9D:19:7B:75",
         "sku": "20LAB9901",
-        "light": {
-            "numberOfLights": 1,
-            "lights": [
-                {
-                    "on": 0,
-                    "brightness": 31,
-                    "temperature": 179
-                }
-            ]
-        },
         "settings": {
             "powerOnBehavior": 1,
             "powerOnBrightness": 20,
@@ -47,6 +45,14 @@
         "features": [
             "lights"
         ],
+        "numberOfLights": 1,
+        "lights": [
+            {
+                "on": 0,
+                "brightness": 10,
+                "temperature": 245
+            }
+        ],
         "device": "Elgato Key Light Air 5E29",
         "manufacturer": "Elgato",
         "hostname": "elgato-key-light-air-5e29.local",
@@ -56,16 +62,6 @@
         "port": 9123,
         "mac": "3C:6A:9D:19:E0:F5",
         "sku": "20LAB9901",
-        "light": {
-            "numberOfLights": 1,
-            "lights": [
-                {
-                    "on": 0,
-                    "brightness": 10,
-                    "temperature": 245
-                }
-            ]
-        },
         "settings": {
             "powerOnBehavior": 1,
             "powerOnBrightness": 20,

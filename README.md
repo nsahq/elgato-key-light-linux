@@ -37,7 +37,7 @@ The dot(.) notation to target a specific host based on its ipv4 address would be
 
 of for a nested JSON object like the serial number within the info object:
 ```bash
-    '.info.serialNumber = "CW16K1A01748"'
+    '.serialNumber = "CW16K1A01748"'
 ```
 
 Example of JSON result (see examples directory for more/full output examples):
@@ -45,39 +45,30 @@ Example of JSON result (see examples directory for more/full output examples):
 ```json
 [
     {
+        "productName": "Elgato Key Light Air",
+        "firmwareVersion": "1.0.3",
+        "displayName": "Front  Right",
         "device": "Elgato Key Light Air 0C2C",
-        "manufacturer": "Elgato",
-        "hostname": "elgato-key-light-air-0c2c.local",
         "url": "http://192.168.0.132:9123",
         "ipv4": "192.168.0.132",
-        "ipv6": "N/A",
-        "port": 9123,
         ...
         <omitted>
         ...        
-        "light": {
-            "numberOfLights": 1,
-            "lights": [
-                {
-                    "on": 0,
-                    "brightness": 31,
-                    "temperature": 179
-                }
-            ]
-        },
-        ...
-        <omitted>
-        ... 
-        "info": {
-            "productName": "Elgato Key Light Air",
-            "hardwareBoardType": 200,
-            "firmwareBuildNumber": 199,
-            "firmwareVersion": "1.0.3",
-            "serialNumber": "CW16K1A01748",
-            "displayName": "Front  Right",
-            "features": [
-                "lights"
-            ]
+        "numberOfLights": 1,
+        "lights": [
+            {
+                "on": 0,
+                "brightness": 31,
+                "temperature": 179
+            }
+        ]
+        "settings": {
+            "powerOnBehavior": 1,
+            "powerOnBrightness": 20,
+            "powerOnTemperature": 213,
+            "switchOnDurationMs": 100,
+            "switchOffDurationMs": 300,
+            "colorChangeDurationMs": 100
         }
 ```
 
@@ -88,26 +79,26 @@ Here you will find a list of examples for some common use cases that can be adap
 
 Note! You can add the other formatting parameters as -p/--pretty -f/--format or specify any of the other action.
 
-Perform action on all ligts that exactly matches "Front Right" (case sensitive) in their names:
+Perform action on all lights that exactly matches "Front Right" (case sensitive) in their names:
 
 ```bash
-./keylights.sh -t '.info.displayName = "Front Right")' <action>
+./keylights.sh -t '.displayName == "Front Right")' <action>
 ```
 
-Perform action on all ligts that has "Left" (case sensitive) in their names:
+Perform action on all lights that has "Left" (case sensitive) in their names:
 
 ```bash
-./keylights.sh -t '.info.displayName | contains("Left")' <action>
+./keylights.sh -t '.displayName | contains("Left")' <action>
 ```
 
-Perform action on all ligts that has "front" in their names in a case insensitive manner:
+Perform action on all lights that has "front" in their names in a case insensitive manner:
 
 ```bash
-./keylights.sh -t '.info.displayName | ascii_downcase | contains("front")' <action>
+./keylights.sh -t '.displayName | ascii_downcase | contains("front")' <action>
 ```
 
-Perform action on all ligts that are currently turned on (notice the array expansion):
+Perform action on all lights that have a duration of 100 ms when switched on (notice the object expansion with .(dot)):
 
 ```bash
-./keylights.sh -t '.light.lights | .[] | .on = 1)' <action>
+./keylights.sh -t '.settings.switchOnDurationMs == 100)' <action>
 ```
