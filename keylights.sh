@@ -144,16 +144,6 @@ produce_json() {
     lights_json=$(echo "${lights[@]}" | jq -c -s "$t")
 }
 
-# produce_json() {
-#     declare json
-#     t=$(eval echo "'.[] | select($target)'")
-
-#     for l in "${!lights[@]}"; do
-#         json+="${lights[$l]},"
-#     done
-
-#     lights_json=$(echo "[${json%,}]" | jq -c "$t")
-# }
 output() {
     data=${1-}
     type=${2-"$format"}
