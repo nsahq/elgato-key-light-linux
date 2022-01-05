@@ -25,6 +25,7 @@ The script transforms the captured base data to JSON, to allow use of jq filteri
 jq allows you to pipe results to further transform, compare and parse in many ways. The threshold of starting to use JQ can feel a bit high for novice shell users and we therefore give you some [basic information on jq filters](#filter-basics) and [examples](#example-target-filters).
 
 ### Filter basics
+
 The parameter data to pass in to the -t or --target option uses.(dot) notation of the JSON data.
 
 **IMPORTANT! When specifying a filter you MUST do so within single quotes (') and use double quote (") around data values, as per jq standard. Not doing this will throw a jq parse error.**
@@ -36,6 +37,7 @@ The dot(.) notation to target a specific host based on its ipv4 address would be
 ```
 
 of for a nested JSON object like the serial number within the info object:
+
 ```bash
     '.serialNumber == "CW16K1A01748"'
 ```
