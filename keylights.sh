@@ -4,7 +4,6 @@ set -Eeuo pipefail
 trap destroy SIGINT SIGTERM ERR EXIT
 
 # Settings
-temp_file="/tmp/elgatokeylights"
 script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
 icon="${script_dir}/assets/elgato.png"
 
@@ -37,7 +36,6 @@ die() {
 
 destroy() {
     code=$?
-    rm "$temp_file" 2>/dev/null
 
     exit ${code}
 }
@@ -211,7 +209,8 @@ set_state() {
 
 find_lights() {
     # Scan the network for Elgato devices
-    avahi-browse -d local _elg._tcp --resolve -t | grep -v "^\+" >"$temp_file"
+    declare -a avahi
+    readarray -t avahi < <(avahi-browse -d local _elg._tcp --resolve -t -p | grep -v "^\+")
 
     declare device
     declare hostname
@@ -227,67 +226,59 @@ find_lights() {
     declare light
     default_light_properties
 
-    cat "$temp_file" >tmp
-    while read -r line; do
+    for l in "${avahi[@]}"; do
+        IFS=';' read -ra data <<<"$l" # split line into array
 
         # Gather information about the light
-        if [[ ($line == =*) && ($line =~ IPv[46][[:space:]](.+)[[:space:]]_elg) ]]; then
-            device=$(eval echo "${BASH_REMATCH[1]}") # eval to strip whitespace
-        elif [[ $line =~ hostname.+\[(.+)\] ]]; then
-            hostname=${BASH_REMATCH[1]}
-        elif [[ $line =~ address.+\[(.+)\] ]]; then
-            ip=${BASH_REMATCH[1]}
-            [[ $ip =~ fe80 ]] && ipv6="$ip" || ipv4="$ip"
-            ip=""
-        elif [[ $line =~ port.+\[(.+)\] ]]; then
-            port=${BASH_REMATCH[1]}
-        elif [[ $line =~ txt.+\[(.+)\] ]]; then
-            txt=$(eval echo "${BASH_REMATCH[1]}") # eval to strip single and double quotes
+        device=$(echo "${data[3]}" | sed -e 's/\\032/ /g') # fix avahi output
+        hostname=${data[6]}
+        [[ ${data[7]} =~ fe80 ]] && ipv6=${data[7]} || ipv4=${data[7]}
+        port=${data[8]}
+        txt=$(eval echo "${data[9]}") # eval to strip quotes
+        [[ $txt =~ mf=([^[[:space:]]*]*) ]] && manufacturer=${BASH_REMATCH[1]}
+        [[ $txt =~ id=([^[[:space:]]*]*) ]] && mac=${BASH_REMATCH[1]}
+        [[ $txt =~ md=.+[[:space:]]([^[[:space:]]*]*)[[:space:]]id= ]] && sku=${BASH_REMATCH[1]}
 
-            if [[ $txt =~ mf=([^[[:space:]]*]*) ]]; then manufacturer=${BASH_REMATCH[1]}; fi
-            if [[ $txt =~ id=([^[[:space:]]*]*) ]]; then mac=${BASH_REMATCH[1]}; fi
-            if [[ $txt =~ md=.+[[:space:]]([^[[:space:]]*]*)[[:space:]]id= ]]; then sku=${BASH_REMATCH[1]}; fi
+        # Get information from the light
+        url="http://$ipv4:$port"
 
-            # Get information from the light
-            url="http://$ipv4:$port"
-
-            declare protocol="--ipv4"
-            if [[ $ipv4 == "N/A" ]]; then
-                # Workaround: Ignoring ipv6 as Elgato miss-announces addressing and is not accepting requests
-                # properly for v6. Will not change to filter only on ipv4 from avahi, as that can cause us to only end
-                # up with an ipv6 address even though it was announced as ipv4, which in turn means we cannot communicate.
-                continue
-                # Remove above and uncomment below if a future update fixes ipv6 announcement and requests
-                #protocol="--ipv6"
-                #url="http://[$ip]:$port"
-            fi
-
-            cfg=$(eval "${call} GET $protocol ${url}${settings}") >/dev/null
-            info=$(eval "${call} GET $protocol ${url}${accessory_info}") >/dev/null
-            light=$(eval "${call} GET $protocol ${url}${devices}") >/dev/null
-
-            # Store the light as json
-            lights["$device"]=$(jq -n \
-                --arg dev "$device" \
-                --arg hn "$hostname" \
-                --arg ipv4 "$ipv4" \
-                --arg ipv6 "$ipv6" \
-                --argjson port "$port" \
-                --arg mf "$manufacturer" \
-                --arg mac "$mac" \
-                --arg sku "$sku" \
-                --arg url "$url" \
-                --argjson light "$light" \
-                --argjson cfg "$cfg" \
-                --argjson info "$info" \
-                '{device: $dev, manufacturer: $mf, hostname: $hn, url: $url, ipv4: $ipv4, ipv6: $ipv6, 
-                    port: $port, mac: $mac, sku: $sku, light: $light, settings: $cfg, info: $info}')
-
-            # Reset for next light as we are processing the last avahi line
-            default_light_properties
-
+        declare protocol="--ipv4"
+        if [[ $ipv4 == "N/A" ]]; then
+            # Workaround: Ignoring ipv6 as Elgato miss-announces addressing and is not accepting requests
+            # properly for v6. Will not change to filter only on ipv4 from avahi, as that can cause us to only end
+            # up with an ipv6 address even though it was announced as ipv4, which in turn means we cannot communicate.
+            continue
+            # Remove above and uncomment below if a future update fixes ipv6 announcement and requests
+            #protocol="--ipv6"
+            #url="http://[$ip]:$port"
         fi
-    done <"$temp_file"
+
+        cfg=$(eval "${call} GET $protocol ${url}${settings}") >/dev/null
+        info=$(eval "${call} GET $protocol ${url}${accessory_info}") >/dev/null
+        light=$(eval "${call} GET $protocol ${url}${devices}") >/dev/null
+
+        json=$(jq -n \
+            --arg dev "$device" \
+            --arg hn "$hostname" \
+            --arg ipv4 "$ipv4" \
+            --arg ipv6 "$ipv6" \
+            --argjson port "$port" \
+            --arg mf "$manufacturer" \
+            --arg mac "$mac" \
+            --arg sku "$sku" \
+            --arg url "$url" \
+            --argjson light "$light" \
+            --argjson cfg "$cfg" \
+            '{device: $dev, manufacturer: $mf, hostname: $hn, url: $url, ipv4: $ipv4, ipv6: $ipv6, 
+                port: $port, mac: $mac, sku: $sku, light: $light, settings: $cfg}')
+
+        # Store the light as json
+        lights["$device"]=$(echo "$info $json" | jq -s '. | add')
+
+        # Reset for next light as we are processing the last avahi line
+        default_light_properties
+
+    done
 }
 
 # Manage user parameters
