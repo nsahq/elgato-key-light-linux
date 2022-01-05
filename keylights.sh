@@ -51,7 +51,7 @@ Available actions:
     status      Get state of lights
     on          Turn all lights on
     off         Turn all lights off
-    temperature  Set temperature level (260-470)
+    temperature Set temperature level (260-470)
     brightness  Set brightness level (0-100)
     increase    Increases brightness by 10
     decrease    Decreases brightness by 10
