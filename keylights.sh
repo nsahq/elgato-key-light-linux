@@ -166,7 +166,6 @@ output() {
 }
 
 print_json() {
-    # TODO: Evaluate adding jq filtering as filter argument
 
     # Manage pretty printing
     if [[ $pretty -eq 1 ]]; then
@@ -179,17 +178,41 @@ print_json() {
 }
 
 print_structured() {
+    pp=${3-$pretty}
+    # Handle csv and table printing
     query="(.[0] | keys_unsorted | map(ascii_upcase)), (.[] | [.[]])|${2-@csv}"
 
+    # Handle printing as key value pairs
     if [[ ${2} == 'pairs' ]]; then
         query='.[] | "--------------",(to_entries[] | [.key, "=", .value] | @tsv)'
     fi
+
     # Manage pretty printing
-    if [[ $pretty -eq 1 ]]; then
-        echo "${1-}" | jq --raw-output "$query" | column -t -s$'\t'
+    if [[ $pp -eq 1 ]]; then
+        echo "${1-}" | jq --raw-output "$query" | column -t -s$'\t' | sed -e 's/"//g'
     else
         echo "${1-}" | jq -r "$query"
     fi
+}
+
+print_html() {
+    data=$(print_structured "$1" '@csv' 1)
+
+    html="
+    <table>
+    $(
+        print_header=true
+        while read d; do
+            if $print_header; then
+                echo "<tr><th>${d//,/<\/th><th>}</th></tr>"
+                print_header=false
+                continue
+            fi
+            echo "<tr><td>${d//,/</td><td>}</td></tr>"
+        done <<<"${data}"
+    )
+    </table>"
+    echo "$html" >test.html
 }
 
 set_state() {
@@ -279,7 +302,7 @@ dependencies avahi-browse curl notify-send jq
 find_lights
 
 # Fail if we cannot find lights
-[[ ${#lights[@]} -eq 0 ]] && die "No lights found" 2
+[[ ${#lights[@]} -eq 0 ]] && die "No lights found"
 
 produce_json
 
