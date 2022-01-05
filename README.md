@@ -88,6 +88,12 @@ Here you will find a list of examples for some common use cases that can be adap
 
 Note! You can add the other formatting parameters as -p/--pretty -f/--format or specify any of the other action.
 
+Perform action on all ligts that exactly matches "Front Right" (case sensitive) in their names:
+
+```bash
+./keylights.sh -t '.info.displayName = "Front Right")' <action>
+```
+
 Perform action on all ligts that has "Left" (case sensitive) in their names:
 
 ```bash
@@ -98,4 +104,10 @@ Perform action on all ligts that has "front" in their names in a case insensitiv
 
 ```bash
 ./keylights.sh -t '.info.displayName | ascii_downcase | contains("front")' <action>
+```
+
+Perform action on all ligts that are currently turned on (notice the array expansion):
+
+```bash
+./keylights.sh -t '.light.lights | .[] | .on = 1)' <action>
 ```
