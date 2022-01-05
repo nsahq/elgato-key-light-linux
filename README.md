@@ -1,4 +1,7 @@
 - [elagto-key-light-linux](#elagto-key-light-linux)
+  - [USAGE](#usage)
+  - [Installation](#installation)
+    - [Dependencies](#dependencies)
   - [JSON filters in -t/--target](#json-filters-in--t--target)
     - [Filter basics](#filter-basics)
     - [Example target filters](#example-target-filters)
@@ -14,6 +17,54 @@ Allows discovery of devices, information collection directly from the lights, ch
 Intended for easy use via CLI, keyboard shortcuts and by StreamDeck, Cinnamon applets etc.
 
 If you are using a StreamDeck you can target this script as a command for the button press.
+
+## USAGE
+
+```bash
+Usage: keylights.sh [-h] [-f <value>] [-l] [-p] [-s] [-t <value>][-v] [--<option>] [--<option> <value>] <action>
+
+Elgato Lights controller. Works for Key Light and Key Light Air.
+
+Available actions:
+    list        List available lights
+    status      Get state of lights
+    on          Turn all lights on
+    off         Turn all lights off
+    temperature  Set temperature level (260-470)
+    brightness  Set brightness level (0-100)
+    increase    Increases brightness by 10
+    decrease    Decreases brightness by 10
+
+Available formats:
+    json        Renders output as JSON (default)
+    flat        Renders output as flattened JSON with .(dot) notation JSON (default)
+    html        Renders output as basic html table
+    csv         Renders output as csv
+    table       Renders output as a printed table
+    pair        Renders output as flattened key=value pairs
+
+
+Available options:
+
+-h, --help      Print this help and exit
+-f  --format    Set output format
+-p, --pretty    Pretty print console output
+-s, --silent    Supress notifications
+-t, --target    Only perform action on devices where value matches filter
+-v, --verbose   Print script debug info
+```
+
+## Installation
+
+No installation or configuration required. Download, copy paste or git clone the repo to your local machine and run the script.
+
+### Dependencies
+
+The script requires avahi-browse, notify-send and curl to be installed.
+
+```bash
+sudo apt-get install avahi-utils curl notify-send
+```
 
 ## JSON filters in -t/--target
 
