@@ -37,7 +37,8 @@ Available actions:
 
 Available formats:
     json        Renders output as JSON (default)
-    flat        Renders output as flattened JSON with .(dot) notation JSON (default)
+    simple      Renders output as JSON array of single level objects with subarrays as .(dot) notation JSON
+    flat        Renders output as fully flattened single level JSON with .(dot) notation JSON
     html        Renders output as basic html table
     csv         Renders output as csv
     table       Renders output as a printed table
@@ -60,10 +61,10 @@ No installation or configuration required. Download, copy paste or git clone the
 
 ### Dependencies
 
-The script requires avahi-browse, notify-send and curl to be installed.
+The script requires avahi-browse, notify-send, jq and curl to be installed.
 
 ```bash
-sudo apt-get install avahi-utils curl notify-send
+sudo apt-get install avahi-utils curl notify-send jq
 ```
 
 ## JSON filters in -t/--target
