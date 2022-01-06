@@ -157,10 +157,10 @@ output() {
     json) print_json "$lights_json" ;;
     simple) print_json "$simple_json" ;;
     flat) print_json "$flat_json" ;;
-    table) print_structured "$simple_json" '@tsv' ;;
-    csv) print_structured "$simple_json" '@csv' ;;
-    pair) print_structured "$simple_json" 'pairs' ;;
-    html) print_html "$simple_json" ;;
+    table) print_structured '@tsv' ;;
+    csv) print_structured '@csv' ;;
+    pair) print_structured 'pairs' ;;
+    html) print_html ;;
     -?*) die "Unknown output format (-f/--format): $format" ;;
     esac
 }
@@ -178,25 +178,25 @@ print_json() {
 }
 
 print_structured() {
-    pp=${3-$pretty}
+    pp=${2-$pretty}
     # Handle csv and table printing
-    query="(.[0] | keys_unsorted | map(ascii_upcase)), (.[] | [.[]])|${2-@csv}"
+    query="(.[0] | keys_unsorted | map(ascii_upcase)), (.[] | [.[]])|${1-@csv}"
 
     # Handle printing as key value pairs
-    if [[ ${2} == 'pairs' ]]; then
+    if [[ ${1} == 'pairs' ]]; then
         query='.[] | "--------------",(to_entries[] | [.key, "=", .value] | @tsv)'
     fi
 
     # Manage pretty printing
     if [[ $pp -eq 1 ]]; then
-        echo "${1-}" | jq --raw-output "$query" | column -t -s$'\t' | sed -e 's/"//g'
+        echo "${simple_json}" | jq --raw-output "$query" | column -t -s$'\t' | sed -e 's/"//g'
     else
-        echo "${1-}" | jq -r "$query"
+        echo "${simple_json}" | jq -r "$query"
     fi
 }
 
 print_html() {
-    data=$(print_structured "$1" '@csv' 1)
+    data=$(print_structured '@csv' 1)
 
     html="
     <table>
