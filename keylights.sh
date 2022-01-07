@@ -212,7 +212,7 @@ print_html() {
         done <<<"${data}"
     )
     </table>"
-    echo "$html" >test.html
+    echo "$html"
 }
 
 set_state() {
