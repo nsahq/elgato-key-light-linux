@@ -1,4 +1,5 @@
 # -t/--target filters - The power of jq
+
 This document is a cheat sheet/quick guide of getting you started with filtering out the light targets you want.
 
 - [-t/--target filters - The power of jq](#-t--target-filters---the-power-of-jq)
