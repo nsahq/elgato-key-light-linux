@@ -93,7 +93,7 @@ parse_params() {
             shift
             ;;
         -l | --limit)
-            limit=$(eval echo "\| {${2-}} ")
+            limit=$(eval echo "\| { ${2-} } ")
             shift
             ;;
         -p | --pretty) pretty=1 ;;
