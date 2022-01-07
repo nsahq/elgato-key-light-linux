@@ -130,23 +130,6 @@ dependencies() {
     done
 }
 
-default_light_properties() {
-    # Default values for json type enforcement
-    device="N/A"
-    hostname="N/A"
-    manufacturer="N/A"
-    ipv4="N/A"
-    ipv6="N/A"
-    port=0
-    mac="N/A"
-    sku="N/A"
-    cfg="{}"
-    url="{}"
-    info="{}"
-    light="{}"
-
-}
-
 produce_json() {
     t=$(eval echo "'[.[] $limit| select($target)]'")
     f=$(eval echo "'[.[] | select($target)]'")
@@ -272,21 +255,20 @@ find_lights() {
     declare -a avahi
     readarray -t avahi < <(avahi-browse -d local _elg._tcp --resolve -t -p | grep -v "^\+")
 
-    declare device
-    declare hostname
-    declare manufacturer
-    declare ipv4
-    declare ipv6
-    declare -i port
-    declare mac
-    declare sku
-    declare cfg
-    declare url
-    declare info
-    declare light
-    default_light_properties
-
     for l in "${avahi[@]}"; do
+        declare device="N/A"
+        declare hostname="N/A"
+        declare manufacturer="N/A"
+        declare ipv4="N/A"
+        declare ipv6="N/A"
+        declare -i port=0
+        declare mac="N/A"
+        declare sku="N/A"
+        declare cfg="{}"
+        declare url="{}"
+        declare info="{}"
+        declare light="{}"
+
         IFS=';' read -ra data <<<"$l" # split line into array
 
         # Gather information about the light
@@ -333,10 +315,6 @@ find_lights() {
 
         # Store the light as json and merge info + light into base object
         lights["$device"]=$(echo "$info $light $json" | jq -s '. | add')
-
-        # Reset for next light as we are processing the last avahi line
-        default_light_properties
-
     done
 }
 
