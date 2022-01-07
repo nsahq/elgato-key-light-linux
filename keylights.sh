@@ -179,6 +179,7 @@ print_json() {
 
 print_structured() {
     pp=${2-$pretty}
+
     # Handle csv and table printing
     query="(.[0] | keys_unsorted | map(ascii_upcase)), (.[] | [.[]])|${1-@csv}"
 
@@ -191,7 +192,11 @@ print_structured() {
     if [[ $pp -eq 1 ]]; then
         echo "${simple_json}" | jq --raw-output "$query" | column -t -s$'\t' | sed -e 's/"//g'
     else
+        if [[ ${1} == 'pairs' ]]; then
+            echo "${simple_json}" | jq -r "$query" | sed -e 's/\t//g'
+        else
         echo "${simple_json}" | jq -r "$query"
+    fi
     fi
 }
 
