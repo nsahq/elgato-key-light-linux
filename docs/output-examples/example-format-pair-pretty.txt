@@ -1,0 +1,14 @@
+--------------                     
+productName                     =  Elgato Key Light Air
+displayName                     =  Front  Right
+device                          =  Elgato Key Light Air 0C2C
+ipv4                            =  192.168.0.132
+lights.0.on                     =  0
+lights.0.brightness             =  31
+lights.0.temperature            =  179
+settings.powerOnBehavior        =  1
+settings.powerOnBrightness      =  20
+settings.powerOnTemperature     =  213
+settings.switchOnDurationMs     =  100
+settings.switchOffDurationMs    =  300
+settings.colorChangeDurationMs  =  100
