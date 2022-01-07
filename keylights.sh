@@ -204,8 +204,8 @@ print_structured() {
         if [[ ${1} == 'pairs' ]]; then
             echo "${simple_json}" | jq -r "$query" | sed -e 's/\t//g'
         else
-        echo "${simple_json}" | jq -r "$query"
-    fi
+            echo "${simple_json}" | jq -r "$query"
+        fi
     fi
 }
 
@@ -230,8 +230,41 @@ print_html() {
 }
 
 set_state() {
-    new_state=$1
-    die "To be implemented"
+    declare -a data
+    readarray -t data < <(echo "${full_json}" | jq -c '.[] | {displayName, url, numberOfLights, lights}')
+    declare -a updated
+
+    x=$(echo "${1}" | tr 01 10) # "flip the bit"
+
+    for d in "${data[@]}"; do
+        query_old="[.lights[] | select(.on==${x})] | length"
+        count_found=$(echo "${d}" | jq "$query_old")
+
+        # Don't send to lights already in wanted state
+        if [[ $count_found -eq 0 ]]; then continue; fi
+
+        # Extract relevant data and create new json object
+        url=$(echo "${d}" | jq '.url')
+        dn=$(echo "${d}" | jq -r '.displayName')
+        l=$(echo "${d}" | jq -c 'del(.url, .displayName)' | jq ". | .lights[].on = ${1}")
+
+        # Send command
+        if eval "${call} PUT -d '${l}' ${url}${devices}" >/dev/null; then updated+=("$dn"); fi
+    done
+
+    # Text representation of new state
+    state="ON"
+    [[ $1 -eq 0 ]] && state="OFF"
+
+    # Send notification
+    if [[ ${#updated[*]} -gt 0 ]]; then
+        n="Turned $state ${#updated[@]} lights:\n\n"
+        for i in "${updated[@]}"; do
+            n+=$(echo "$i\n")
+        done
+        notify "$n"
+
+    fi
 }
 
 find_lights() {
