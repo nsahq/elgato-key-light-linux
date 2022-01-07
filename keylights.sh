@@ -260,7 +260,7 @@ set_state() {
     if [[ ${#updated[*]} -gt 0 ]]; then
         n="Turned $state ${#updated[@]} lights:\n\n"
         for i in "${updated[@]}"; do
-            n+=$(echo "$i\n")
+            n+="$i\n"
         done
         notify "$n"
 
