@@ -307,6 +307,9 @@ find_lights() {
     done
 }
 
+# Quit if script is run by root
+[[ "$EUID" -eq 0 ]] && die "Not allowed to run as root"
+
 # Manage user parameters
 parse_params "$@"
 
