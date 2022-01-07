@@ -1,8 +1,3 @@
-- [elagto-key-light-linux](#elagto-key-light-linux)
-  - [Installation](#installation)
-    - [Dependencies](#dependencies)
-  - [Usage](#usage)
-
 # elagto-key-light-linux
 
 Small bash script to manage elgato key light and key light air.
@@ -30,11 +25,12 @@ sudo apt-get install avahi-utils curl notify-send jq
 ## Usage
 
 Please see the docs sections to get examples and learn more about:
+
 * [output formats - Have it your way](docs/output-formats.md)
 * [-t/--target filters - The power of jq filtering](docs/target-filters.md)
 
 ```bash
-Usage: keylights.sh [-h] [-f <value>] [-l] [-p] [-s] [-t <value>][-v] [--<option>] [--<option> <value>] <action>
+Usage: keylights.sh [-h] [-f <value>] [-l <value>] [-p] [-s] [-t <value>][-v] [--<option>] [--<option> <value>] <action>
 
 Elgato Lights controller. Works for Key Light and Key Light Air.
 
@@ -60,10 +56,33 @@ Available formats:
 
 Available options:
 
--h, --help      Print this help and exit
--f  --format    Set output format
--p, --pretty    Pretty print console output
--s, --silent    Supress notifications
--t, --target    Only perform action on devices where value matches filter
--v, --verbose   Print script debug info
+-h, --help               Print this help and exit
+-f, --format             Set output format
+-l, --limit <list>       Limit top level output fields to the specified comma separated list
+-p, --pretty             Pretty print console output
+-s, --silent             Supress notifications
+-t, --target <filter>    Only perform action on devices where value matches filter
+-v, --verbose            Print script debug info
+```
+
+## Example use cases
+
+I have five lights in the room namned: Front Left, Front Right, front center, Rear Right, rear left.
+
+I want to turn all lights on with my StreamDeck by setting a command to:
+
+```bash
+./keylights.sh on
+```
+
+I want to see the displayName, productName, serialNumber and firmwareVersion of all the lights on the right side of the room in a table:
+
+```bash
+./keylights.sh --target '.displayName | contains("Right")' --limit "displayName, productName, serialNumber, firmwareVersion"  --format table list
+```
+
+I want to let my stream deck button turn off all lights in the front of the room:
+
+```bash
+./keylights.sh --target '.displayName | ascii_downcase | contains("front")' off
 ```
