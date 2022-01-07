@@ -12,9 +12,11 @@ declare -i silent=0
 declare -i pretty=0
 declare action="usage"
 declare target='.'
+declare limit=""
 declare format="json"
 declare -A lights
 declare lights_json
+declare full_json
 declare simple_json
 declare flat_json
 declare call='curl --silent --show-error --location --header "Accept: application/json" --request'
@@ -43,7 +45,7 @@ destroy() {
 
 usage() {
     cat <<EOF
-Usage: $(basename "${BASH_SOURCE[0]}") [-h] [-f <value>] [-l] [-p] [-s] [-t <value>][-v] [--<option>] [--<option> <value>] <action>
+Usage: $(basename "${BASH_SOURCE[0]}") [-h] [-f <value>] [-l <value>] [-p] [-s] [-t <value>][-v] [--<option>] [--<option> <value>] <action>
 
 Elgato Lights controller. Works for Key Light and Key Light Air.
 
@@ -69,12 +71,13 @@ Available formats:
 
 Available options:
 
--h, --help      Print this help and exit
--f  --format    Set output format
--p, --pretty    Pretty print console output
--s, --silent    Supress notifications
--t, --target    Only perform action on devices where value matches filter
--v, --verbose   Print script debug info
+-h, --help               Print this help and exit
+-f, --format             Set output format
+-l, --limit <list>       Limit top level output fields to the specified comma separated list
+-p, --pretty             Pretty print console output
+-s, --silent             Supress notifications
+-t, --target <filter>    Only perform action on devices where value matches filter
+-v, --verbose            Print script debug info
 EOF
     exit
 }
@@ -87,6 +90,10 @@ parse_params() {
         -h | --help) usage ;;
         -f | --format)
             format="${2-}"
+            shift
+            ;;
+        -l | --limit)
+            limit=$(eval echo "\| {${2-}} ")
             shift
             ;;
         -p | --pretty) pretty=1 ;;
@@ -141,9 +148,11 @@ default_light_properties() {
 }
 
 produce_json() {
-    t=$(eval echo "'[.[] | select($target)]'")
+    t=$(eval echo "'[.[] $limit| select($target)]'")
+    f=$(eval echo "'[.[] | select($target)]'")
 
     lights_json=$(echo "${lights[@]}" | jq -c -s "$t")
+    full_json=$(echo "${lights[@]}" | jq -c -s "$f")
     simple_json=$(echo "${lights_json}" | jq -c '.[] | reduce ( tostream | select(length==2) | .[0] |= [join(".")] ) as [$p,$v] ({}; setpath($p; $v)) ')
     simple_json=$(echo "${simple_json}" | jq -c -s '.') # slurp it to make it an array
     flat_json=$(echo "${lights_json}" | jq -c -s '.[] | reduce ( tostream | select(length==2) | .[0] |= [join(".")] ) as [$p,$v] ({}; setpath($p; $v)) ')
