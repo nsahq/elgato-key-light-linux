@@ -28,7 +28,7 @@ if [ ! -r "${icon}" ]; then icon=sunny; fi
 
 notify() {
     if [ $silent -eq 0 ]; then
-        notify-send -i "$icon" "Key Light Controller" "$1"
+        notify-send -i "${icon}" "Key Light Controller" "${1}"
     fi
 }
 
@@ -116,6 +116,11 @@ parse_params() {
     [[ ${#args[@]} -ne 1 ]] && die "Incorrect argument count"
 
     #[[ ($silent -eq 1) && ($pretty -eq 1) ]] && die "Cannot use silent and pretty options simultaneously"
+    [[ "${args[0]}" == "increase" ]] && die "Action not yet implemented"
+    [[ "${args[0]}" == "decrease" ]] && die "Action not yet implemented"
+    [[ "${args[0]}" == "brightness" ]] && die "Action not yet implemented"
+    [[ "${args[0]}" == "temperature" ]] && die "Action not yet implemented"
+    [[ "${args[0]}" == "status" ]] && limit="| { 'displayName,lights' } "
 
     [[ -n "${actions[${args[0]}]}" ]] && action="${args[0]}"
 
@@ -124,32 +129,15 @@ parse_params() {
 
 dependencies() {
     for var in "$@"; do
-        if ! command -v $var &>/dev/null; then
-            die "Dependency $var was not found, please install and try again"
+        if ! command -v ${var} &>/dev/null; then
+            die "Dependency ${var} was not found, please install and try again"
         fi
     done
 }
 
-default_light_properties() {
-    # Default values for json type enforcement
-    device="N/A"
-    hostname="N/A"
-    manufacturer="N/A"
-    ipv4="N/A"
-    ipv6="N/A"
-    port=0
-    mac="N/A"
-    sku="N/A"
-    cfg="{}"
-    url="{}"
-    info="{}"
-    light="{}"
-
-}
-
 produce_json() {
-    t=$(eval echo "'[.[] $limit| select($target)]'")
-    f=$(eval echo "'[.[] | select($target)]'")
+    t=$(eval echo "'[.[] ${limit} | select(${target})]'")
+    f=$(eval echo "'[.[] | select(${target})]'")
 
     lights_json=$(echo "${lights[@]}" | jq -c -s "$t")
     full_json=$(echo "${lights[@]}" | jq -c -s "$f")
@@ -162,15 +150,15 @@ produce_json() {
 output() {
 
     # Mange user requested output format
-    case $format in
-    json) print_json "$lights_json" ;;
-    simple) print_json "$simple_json" ;;
-    flat) print_json "$flat_json" ;;
+    case ${format} in
+    json) print_json "${lights_json}" ;;
+    simple) print_json "${simple_json}" ;;
+    flat) print_json "${flat_json}" ;;
     table) print_structured '@tsv' ;;
     csv) print_structured '@csv' ;;
     pair) print_structured 'pairs' ;;
     html) print_html ;;
-    -?*) die "Unknown output format (-f/--format): $format" ;;
+    -?*) die "Unknown output format (-f/--format): ${format}" ;;
     esac
 }
 
@@ -199,12 +187,12 @@ print_structured() {
 
     # Manage pretty printing
     if [[ $pp -eq 1 ]]; then
-        echo "${simple_json}" | jq --raw-output "$query" | column -t -s$'\t' | sed -e 's/"//g'
+        echo "${simple_json}" | jq --raw-output "${query}" | column -t -s$'\t' | sed -e 's/"//g'
     else
         if [[ ${1} == 'pairs' ]]; then
-            echo "${simple_json}" | jq -r "$query" | sed -e 's/\t//g'
+            echo "${simple_json}" | jq -r "${query}" | sed -e 's/\t//g'
         else
-            echo "${simple_json}" | jq -r "$query"
+            echo "${simple_json}" | jq -r "${query}"
         fi
     fi
 }
@@ -217,7 +205,7 @@ print_html() {
     $(
         print_header=true
         while read d; do
-            if $print_header; then
+            if ${print_header}; then
                 echo "<tr><th>${d//,/<\/th><th>}</th></tr>"
                 print_header=false
                 continue
@@ -226,7 +214,7 @@ print_html() {
         done <<<"${data}"
     )
     </table>"
-    echo "$html"
+    echo "${html}"
 }
 
 set_state() {
@@ -238,10 +226,10 @@ set_state() {
 
     for d in "${data[@]}"; do
         query_old="[.lights[] | select(.on==${x})] | length"
-        count_found=$(echo "${d}" | jq "$query_old")
+        count_found=$(echo "${d}" | jq "${query_old}")
 
         # Don't send to lights already in wanted state
-        if [[ $count_found -eq 0 ]]; then continue; fi
+        if [[ ${count_found} -eq 0 ]]; then continue; fi
 
         # Extract relevant data and create new json object
         url=$(echo "${d}" | jq '.url')
@@ -249,20 +237,20 @@ set_state() {
         l=$(echo "${d}" | jq -c 'del(.url, .displayName)' | jq ". | .lights[].on = ${1}")
 
         # Send command
-        if eval "${call} PUT -d '${l}' ${url}${devices}" >/dev/null; then updated+=("$dn"); fi
+        if eval "${call} PUT -d '${l}' ${url}${devices}" >/dev/null; then updated+=("${dn}"); fi
     done
 
     # Text representation of new state
     state="ON"
-    [[ $1 -eq 0 ]] && state="OFF"
+    [[ ${1} -eq 0 ]] && state="OFF"
 
     # Send notification
     if [[ ${#updated[*]} -gt 0 ]]; then
-        n="Turned $state ${#updated[@]} lights:\n\n"
+        n="Turned ${state} ${#updated[@]} lights:\n\n"
         for i in "${updated[@]}"; do
-            n+="$i\n"
+            n+="${i}\n"
         done
-        notify "$n"
+        notify "${n}"
 
     fi
 }
@@ -272,38 +260,32 @@ find_lights() {
     declare -a avahi
     readarray -t avahi < <(avahi-browse -d local _elg._tcp --resolve -t -p | grep -v "^\+")
 
-    declare device
-    declare hostname
-    declare manufacturer
-    declare ipv4
-    declare ipv6
-    declare -i port
-    declare mac
-    declare sku
-    declare cfg
-    declare url
-    declare info
-    declare light
-    default_light_properties
-
     for l in "${avahi[@]}"; do
+        declare ipv4="N/A"
+        declare ipv6="N/A"
+        declare cfg="{}"
+        declare url="N/A"
+        declare info="{}"
+        declare light="{}"
+
         IFS=';' read -ra data <<<"$l" # split line into array
 
         # Gather information about the light
-        device=$(echo "${data[3]}" | sed -e 's/\\032/ /g') # fix avahi output
-        hostname=${data[6]}
-        [[ ${data[7]} =~ fe80 ]] && ipv6=${data[7]} || ipv4=${data[7]}
-        port=${data[8]}
+        device="${data[3]//\\032/ }"
+        port="${data[8]}"
+        hostname="${data[6]}"
+
+        if [[ ${data[7]} =~ fe80 ]]; then ipv6=${data[7]}; else ipv4=${data[7]}; fi
+
         txt=$(eval echo "${data[9]}") # eval to strip quotes
         [[ $txt =~ mf=([^[[:space:]]*]*) ]] && manufacturer=${BASH_REMATCH[1]}
         [[ $txt =~ id=([^[[:space:]]*]*) ]] && mac=${BASH_REMATCH[1]}
         [[ $txt =~ md=.+[[:space:]]([^[[:space:]]*]*)[[:space:]]id= ]] && sku=${BASH_REMATCH[1]}
 
-        # Get information from the light
-        url="http://$ipv4:$port"
+        url="http://${ipv4}:${port}"
 
-        declare protocol="--ipv4"
-        if [[ $ipv4 == "N/A" ]]; then
+        protocol="--ipv4"
+        if [[ ${ipv4} == "N/A" ]]; then
             # Workaround: Ignoring ipv6 as Elgato miss-announces addressing and is not accepting requests
             # properly for v6. Will not change to filter only on ipv4 from avahi, as that can cause us to only end
             # up with an ipv6 address even though it was announced as ipv4, which in turn means we cannot communicate.
@@ -313,35 +295,33 @@ find_lights() {
             #url="http://[$ip]:$port"
         fi
 
-        cfg=$(eval "${call} GET $protocol ${url}${settings}") >/dev/null
-        info=$(eval "${call} GET $protocol ${url}${accessory_info}") >/dev/null
-        light=$(eval "${call} GET $protocol ${url}${devices}") >/dev/null
+        # Get information from the light
+        cfg=$(eval "${call} GET ${protocol} ${url}${settings}") >/dev/null
+        info=$(eval "${call} GET ${protocol} ${url}${accessory_info}") >/dev/null
+        light=$(eval "${call} GET ${protocol} ${url}${devices}") >/dev/null
 
+        # Build json
         json=$(jq -n \
-            --arg dev "$device" \
-            --arg hn "$hostname" \
-            --arg ipv4 "$ipv4" \
-            --arg ipv6 "$ipv6" \
-            --argjson port "$port" \
-            --arg mf "$manufacturer" \
-            --arg mac "$mac" \
-            --arg sku "$sku" \
-            --arg url "$url" \
-            --argjson cfg "$cfg" \
+            --arg dev "${device}" \
+            --arg hn "${hostname}" \
+            --arg ipv4 "${ipv4}" \
+            --arg ipv6 "${ipv6}" \
+            --argjson port "${port}" \
+            --arg mf "${manufacturer}" \
+            --arg mac "${mac}" \
+            --arg sku "${sku}" \
+            --arg url "${url}" \
+            --argjson cfg "${cfg}" \
             '{device: $dev, manufacturer: $mf, hostname: $hn, url: $url, ipv4: $ipv4, ipv6: $ipv6, 
                 port: $port, mac: $mac, sku: $sku, settings: $cfg}')
 
         # Store the light as json and merge info + light into base object
-        lights["$device"]=$(echo "$info $light $json" | jq -s '. | add')
-
-        # Reset for next light as we are processing the last avahi line
-        default_light_properties
-
+        lights["${device}"]=$(echo "${info} ${light} ${json}" | jq -s '. | add')
     done
 }
 
 # Quit if script is run by root
-[[ "$EUID" -eq 0 ]] && die "Not allowed to run as root"
+[[ "${EUID}" -eq 0 ]] && die "Not allowed to run as root"
 
 # Manage user parameters
 parse_params "$@"
@@ -357,10 +337,11 @@ find_lights
 produce_json
 
 # Dispatch actions
-case $action in
+case ${action} in
 usage) usage ;;
+help) usage ;;
 list) output ;;
-status) status ;;
+status) output ;;
 on) set_state 1 ;;
 off) set_state 0 ;;
 -?*) die "Unknown action" ;;
