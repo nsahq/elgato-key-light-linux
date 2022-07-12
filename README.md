@@ -78,11 +78,17 @@ I want to turn all lights on with my StreamDeck by setting a command to:
 I want to see the displayName, productName, serialNumber and firmwareVersion of all the lights on the right side of the room in a table:
 
 ```bash
-./keylights.sh --target '.displayName | contains("Right")' --limit "displayName, productName, serialNumber, firmwareVersion"  --format table list
+./keylights.sh --target '.displayName | contains("Right")' --limit "displayName, productName, serialNumber, firmwareVersion"  --format table --pretty list
 ```
 
-I want to let my stream deck button turn off all lights in the front of the room:
+I want to let my StreamDeck button turn off all lights which contains the name "front" (not case sensitive due to ascii_downcase), i add the following to be a command on button press:
 
 ```bash
 ./keylights.sh --target '.displayName | ascii_downcase | contains("front")' off
+```
+
+I want to let my StreamDeck button turn off all lights which contains the name "Left" (case sensitive), I add the following to be a command on button press:
+
+```bash
+./keylights.sh --target '.displayName | contains("Left")' off
 ```
