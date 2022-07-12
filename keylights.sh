@@ -256,35 +256,30 @@ find_lights() {
     readarray -t avahi < <(avahi-browse -d local _elg._tcp --resolve -t -p | grep -v "^\+")
 
     for l in "${avahi[@]}"; do
-        declare device="N/A"
-        declare hostname="N/A"
-        declare manufacturer="N/A"
         declare ipv4="N/A"
         declare ipv6="N/A"
-        declare -i port=0
-        declare mac="N/A"
-        declare sku="N/A"
         declare cfg="{}"
-        declare url="{}"
+        declare url="N/A"
         declare info="{}"
         declare light="{}"
 
         IFS=';' read -ra data <<<"$l" # split line into array
 
         # Gather information about the light
-        device=$(echo "${data[3]}" | sed -e 's/\\032/ /g') # fix avahi output
-        hostname=${data[6]}
-        [[ ${data[7]} =~ fe80 ]] && ipv6=${data[7]} || ipv4=${data[7]}
-        port=${data[8]}
+        device="${data[3]//\\032/ }"
+        port="${data[8]}"
+        hostname="${data[6]}"
+
+        if [[ ${data[7]} =~ fe80 ]]; then ipv6=${data[7]}; else ipv4=${data[7]}; fi
+
         txt=$(eval echo "${data[9]}") # eval to strip quotes
         [[ $txt =~ mf=([^[[:space:]]*]*) ]] && manufacturer=${BASH_REMATCH[1]}
         [[ $txt =~ id=([^[[:space:]]*]*) ]] && mac=${BASH_REMATCH[1]}
         [[ $txt =~ md=.+[[:space:]]([^[[:space:]]*]*)[[:space:]]id= ]] && sku=${BASH_REMATCH[1]}
 
-        # Get information from the light
         url="http://$ipv4:$port"
 
-        declare protocol="--ipv4"
+        protocol="--ipv4"
         if [[ $ipv4 == "N/A" ]]; then
             # Workaround: Ignoring ipv6 as Elgato miss-announces addressing and is not accepting requests
             # properly for v6. Will not change to filter only on ipv4 from avahi, as that can cause us to only end
@@ -295,16 +290,18 @@ find_lights() {
             #url="http://[$ip]:$port"
         fi
 
+        # Get information from the light
         cfg=$(eval "${call} GET $protocol ${url}${settings}") >/dev/null
         info=$(eval "${call} GET $protocol ${url}${accessory_info}") >/dev/null
         light=$(eval "${call} GET $protocol ${url}${devices}") >/dev/null
 
+        # Build json
         json=$(jq -n \
-            --arg dev "$device" \
-            --arg hn "$hostname" \
+            --arg dev "${device}" \
+            --arg hn "${hostname}" \
             --arg ipv4 "$ipv4" \
             --arg ipv6 "$ipv6" \
-            --argjson port "$port" \
+            --argjson port "${port}" \
             --arg mf "$manufacturer" \
             --arg mac "$mac" \
             --arg sku "$sku" \
