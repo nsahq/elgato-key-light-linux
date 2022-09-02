@@ -1,4 +1,4 @@
-# elagto-key-light-linux
+# elgato-key-light-linux
 
 Small bash script to manage elgato key light and key light air.
 
