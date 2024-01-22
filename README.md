@@ -19,7 +19,7 @@ No installation or configuration required. Download, copy paste or git clone the
 The script requires avahi-browse, notify-send, jq and curl to be installed.
 
 ```bash
-sudo apt-get install avahi-utils curl notify-send jq
+sudo apt-get install avahi-utils curl libnotify-bin jq
 ```
 
 ## Usage
